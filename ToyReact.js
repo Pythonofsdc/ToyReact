@@ -2,7 +2,7 @@ class ElementWrapper {
 	constructor(type) {
 		this.root = document.createElement(type);
 	}
-	setAttributes(name, value) {
+	setAttribute(name, value) {
 		this.root.setAttribute(name, value);
 	}
 	appendChild(vchild) {
