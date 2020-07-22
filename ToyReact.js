@@ -3,13 +3,30 @@ class ElementWrapper {
 		this.root = document.createElement(type);
 	}
 	setAttribute(name, value) {
+		if (name.match(/^on([\s\S]+)$/)) {
+			let eventname = RegExp.$1.replace(/^[\s\S]/, (s) => s.toLowerCase());
+			this.root.addEventListener(eventname, value);
+			return;
+		}
+		if (name == 'className') {
+			name = 'class';
+		}
 		this.root.setAttribute(name, value);
 	}
 	appendChild(vchild) {
-		vchild.mountTo(this.root);
+		let range = document.createRange();
+		if (this.root.children.length) {
+			range.setStartAfter(this.root.lastChild);
+			range.setEndAfter(this.root.lastChild);
+		} else {
+			range.setStart(this.root, 0);
+			range.setEnd(this.root, 0);
+		}
+		vchild.mountTo(range);
 	}
-	mountTo(parent) {
-		parent.appendChild(this.root);
+	mountTo(range) {
+		range.deleteContents();
+		range.insertNode(this.root);
 	}
 }
 
@@ -17,24 +34,56 @@ class TextWrapper {
 	constructor(content) {
 		this.root = document.createTextNode(content);
 	}
-	mountTo(parent) {
-		parent.appendChild(this.root);
+	mountTo(range) {
+		range.deleteContents();
+		range.insertNode(this.root);
 	}
 }
 
 export class Component {
-	constructor() {
+	constructor(props) {
 		this.children = [];
+		this.props = Object.create(null);
 	}
-	mountTo(parent) {
-		let vdom = this.render();
-		vdom.mountTo(parent);
+	mountTo(range) {
+		this.range = range;
+		this.update();
+	}
+	update() {
+		// let placeHolder = document.createComment('placeHolder');
+		// let range = document.createRange();
+		// range.setStart(this.range.endContainer, this.range.endOffset);
+		// range.setEnd(this.range.endContainer, this.range.endOffset);
+		// range.insertNode(placeHolder);
+		this.range.deleteContents();
+		var vdom = this.render();
+		vdom.mountTo(this.range);
 	}
 	setAttribute(name, value) {
+		this.props[name] = value;
 		this[name] = value;
 	}
 	appendChild(child) {
 		this.children.push(child);
+	}
+	setState(state) {
+		let merge = (oldstate, newstate) => {
+			for (let p in newstate) {
+				if (typeof newstate[p] === 'object') {
+					if (typeof oldstate[p] !== 'object') {
+						oldstate[p] = {};
+						merge(oldstate[p], newstate[p]);
+					}
+				} else {
+					oldstate[p] = newstate[p];
+				}
+			}
+		};
+		if (!this.state && state) {
+			this.state = {};
+		}
+		merge(this.state, state);
+		this.update();
 	}
 }
 
@@ -72,6 +121,15 @@ export let ToyReact = {
 		return element;
 	},
 	render(vdom, element) {
-		vdom.mountTo(element);
+		let range = document.createRange();
+		if (element.children) {
+			range.setStartAfter(element.lastChild);
+			range.setEndAfter(element.lastChild);
+		} else {
+			range.setStartAfter(element, 0);
+			range.setEndAfter(element, 0);
+		}
+
+		vdom.mountTo(range);
 	}
 };
