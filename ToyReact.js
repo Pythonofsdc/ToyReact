@@ -50,11 +50,11 @@ export class Component {
 		this.update();
 	}
 	update() {
-		// let placeHolder = document.createComment('placeHolder');
-		// let range = document.createRange();
-		// range.setStart(this.range.endContainer, this.range.endOffset);
-		// range.setEnd(this.range.endContainer, this.range.endOffset);
-		// range.insertNode(placeHolder);
+		let placeHolder = document.createComment('placeHolder');
+		let range = document.createRange();
+		range.setStart(this.range.endContainer, this.range.endOffset);
+		range.setEnd(this.range.endContainer, this.range.endOffset);
+		range.insertNode(placeHolder);
 		this.range.deleteContents();
 		var vdom = this.render();
 		vdom.mountTo(this.range);
